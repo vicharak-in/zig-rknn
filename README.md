@@ -19,3 +19,6 @@ zig build run
 ## Results
 <img src="test_images/output_1.png" width="600"/>
 <img src="test_images/output_2.png" width="600"/>
+
+## Reference
+- [YOLOv8-Face](https://github.com/Yusepp/YOLOv8-Face)
