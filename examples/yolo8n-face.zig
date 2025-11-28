@@ -1,5 +1,5 @@
 const std = @import("std");
-const rknn = @import("rknn_api.zig");
+const rknn = @import("rknn").rknn_api;
 const zigimg = @import("zigimg");
 
 fn check_err(ret: c_int, msg: []const u8) !void {

@@ -1,46 +1,46 @@
 const std = @import("std");
 
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const exe = b.addExecutable(.{
-        .name = "zig_rknn",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/main.zig"),
-            .target = target,
-            .optimize = optimize,
-        }),
+
+    const rknn_mod = b.addModule("rknn", .{
+        .root_source_file = b.path("src/lib.zig"),
+        .target = target,
+        .optimize = optimize,
     });
-
-    b.installArtifact(exe);
-
-    exe.linkLibC();
-    exe.linkSystemLibrary("rknnrt");
 
     const zigimg_dependency = b.dependency("zigimg", .{
         .target = target,
         .optimize = optimize,
     });
 
-    exe.root_module.addImport("zigimg", zigimg_dependency.module("zigimg"));
+    var examples_dir = try std.fs.cwd().openDir("examples", .{ .iterate = true });
+    defer examples_dir.close();
+    var iter = examples_dir.iterate();
+    while (try iter.next()) |entry| {
+        if (entry.kind != .file) continue;
+        if (!std.mem.endsWith(u8, entry.name, ".zig")) continue;
 
-    const run_step = b.step("run", "Run the app");
+        const ex_name = std.fs.path.stem(entry.name);
+        const ex = b.addExecutable(.{
+            .name = ex_name,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path(b.fmt("examples/{s}", .{entry.name})),
+                .target = target,
+                .optimize = optimize,
+            }),
+        });
 
-    const run_cmd = b.addRunArtifact(exe);
-    run_step.dependOn(&run_cmd.step);
+        ex.root_module.addImport("zigimg", zigimg_dependency.module("zigimg"));
+        ex.root_module.addImport("rknn", rknn_mod);
+        ex.linkLibC();
+        ex.linkSystemLibrary("rknnrt");
+        b.installArtifact(ex);
 
-    run_cmd.step.dependOn(b.getInstallStep());
-
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
+        const step = b.step(b.fmt("example-{s}", .{ex_name}), b.fmt("Run example {s}", .{ex_name}));
+        const cmd = b.addRunArtifact(ex);
+        cmd.step.dependOn(b.getInstallStep());
+        step.dependOn(&cmd.step);
     }
-
-    const exe_tests = b.addTest(.{
-        .root_module = exe.root_module,
-    });
-
-    const run_exe_tests = b.addRunArtifact(exe_tests);
-
-    const test_step = b.step("test", "Run tests");
-    test_step.dependOn(&run_exe_tests.step);
 }
