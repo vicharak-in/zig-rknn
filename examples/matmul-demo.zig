@@ -1,5 +1,6 @@
 const std = @import("std");
-const rknn = @import("rknn").rknn_matmul_api;
+const rknn = @import("rknn").rknn_api;
+const rknn_matmul_api = @import("rknn").rknn_matmul_api;
 
 fn check_err(ret: c_int, msg: []const u8) !void {
     if (ret != 0) {
@@ -15,15 +16,15 @@ pub fn main() !void {
 
     std.debug.print("MatMul M={d}, K={d}, N={d}\n", .{ M, K, N });
 
-    var ctx: rknn.rknn_matmul_ctx = undefined;
-    var info: rknn.rknn_matmul_info = .{};
+    var ctx: rknn_matmul_api.rknn_matmul_ctx = undefined;
+    var info: rknn_matmul_api.rknn_matmul_info = .{};
     info.M = M;
     info.K = K;
     info.N = N;
     info.type = rknn.RKNN_TENSOR_FLOAT16;
 
-    var io_attr: rknn.rknn_matmul_io_attr = .{};
-    var ret = rknn.rknn_matmul_create(&ctx, &info, &io_attr);
+    var io_attr: rknn_matmul_api.rknn_matmul_io_attr = .{};
+    var ret = rknn_matmul_api.rknn_matmul_create(&ctx, &info, &io_attr);
     _ = &ret;
     try check_err(ret, "rknn_matmul_create");
 
@@ -51,16 +52,16 @@ pub fn main() !void {
         }
     }
 
-    ret = rknn.rknn_matmul_set_io_mem(ctx, A, &io_attr.A);
+    ret = rknn_matmul_api.rknn_matmul_set_io_mem(ctx, A, &io_attr.A);
     try check_err(ret, "rknn_matmul_set_io_mem");
 
-    ret = rknn.rknn_matmul_set_io_mem(ctx, B, &io_attr.B);
+    ret = rknn_matmul_api.rknn_matmul_set_io_mem(ctx, B, &io_attr.B);
     try check_err(ret, "rknn_matmul_set_io_mem");
 
-    ret = rknn.rknn_matmul_set_io_mem(ctx, C, &io_attr.C);
+    ret = rknn_matmul_api.rknn_matmul_set_io_mem(ctx, C, &io_attr.C);
     try check_err(ret, "rknn_matmul_set_io_mem");
 
-    ret = rknn.rknn_matmul_run(ctx);
+    ret = rknn_matmul_api.rknn_matmul_run(ctx);
     try check_err(ret, "rknn_matmul_run");
 
     for (0..io_attr.C.dims[0]) |i| {

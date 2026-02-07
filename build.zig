@@ -36,6 +36,7 @@ pub fn build(b: *std.Build) !void {
         ex.root_module.addImport("rknn", rknn_mod);
         ex.linkLibC();
         ex.linkSystemLibrary("rknnrt");
+        ex.linkSystemLibrary("rkllmrt");
         b.installArtifact(ex);
 
         const step = b.step(b.fmt("example-{s}", .{ex_name}), b.fmt("Run example {s}", .{ex_name}));
